@@ -377,7 +377,7 @@
     }
 
     function createSvg(settings) {
-        arcto_mode = 1;
+        arcto_mode = 0;
         var svgtext = drawOnSvg(settings);
         var div = document.createElement('div');
         div.innerHTML = svgtext;
