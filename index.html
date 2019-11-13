@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8">
   <script type="text/javascript" src="js/jquery-3.4.1.slim.min.js"></script>
-  <script type="text/javascript" src="js/jquery-qrcode.min.js"></script>
+  <script type="text/javascript" src="js/canvas2svg.js"></script>
+  <script type="text/javascript" src="js/jquery-qrcode.js"></script>
   <script type="text/javascript" src="js/base58.js"></script>
   <title>Seed Maker</title>
 </head>
 <body>
 <div id="qrcode"></div>
+<div id="qrcode-svg"></div>
 <div id="seed"></div>
 <script>
 var crypto = window.crypto || window.msCrypto;
@@ -40,16 +42,30 @@ if(crypto && crypto.getRandomValues) {
   }
   var seedstr = 'seed:' + priv_base58 + ',tag:' + tag + ',gen:pastel-v0.1';
   document.getElementById('seed').innerHTML = seedstr;
-  var s = 400;
+  var canvas_s = 400;
   $('#qrcode').qrcode({
     render: 'canvas',
     ecLevel: 'Q',
     radius: 0.39,
     text: seedstr,
-    size: s,
+    size: canvas_s,
     mode: 2,
     label: 'seed',
-    fontname: 'sans',
+    fontname: 'sans-serif',
+    fontcolor: '#393939'
+  });
+
+  var qr_margin = 4;
+  var svg_s = (54 - qr_margin * 2) * 72 / 25.4;
+  $('#qrcode-svg').qrcode({
+    render: 'svg',
+    ecLevel: 'Q',
+    radius: 0.39,
+    text: seedstr,
+    size: svg_s,
+    mode: 2,
+    label: 'seed',
+    fontname: 'sans-serif',
     fontcolor: '#393939'
   });
 } else {
