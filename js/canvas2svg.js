@@ -708,16 +708,18 @@
         var x = x1 + len_p1_origin * unit_vec_p1_origin[0];
         var y = y1 + len_p1_origin * unit_vec_p1_origin[1];
 
+        var d = ((x2 - x0) * (y1 - y0) - (y2 - y0) * (x1 - x0) > 0) ? -1 : 1;
+
         // Calculate start angle and end angle
         // rotate 90deg clockwise (note that y axis points to its down)
         var unit_vec_origin_start_tangent = [
-            -unit_vec_p1_p0[1],
-            unit_vec_p1_p0[0]
+            -unit_vec_p1_p0[1] * d,
+            unit_vec_p1_p0[0] * d
         ];
         // rotate 90deg counter clockwise (note that y axis points to its down)
         var unit_vec_origin_end_tangent = [
-            unit_vec_p1_p2[1],
-            -unit_vec_p1_p2[0]
+            unit_vec_p1_p2[1] * d,
+            -unit_vec_p1_p2[0] * d
         ];
         var getAngle = function (vector) {
             // get angle (clockwise) between vector and (1, 0)
@@ -738,7 +740,7 @@
 
         // Connect the start tangent point to the end tangent point by arc
         // and adding the end tangent point to the subpath.
-        this.arc(x, y, radius, startAngle, endAngle);
+        this.arc(x, y, radius, startAngle, endAngle, (d < 0));
     };
 
     /**
