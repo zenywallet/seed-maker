@@ -310,6 +310,22 @@
         return $canvas;
     }
 
+    function drawOnSvg(settings) {
+        var qr = createMinQRCode(settings.text, settings.ecLevel, settings.minVersion, settings.maxVersion, settings.quiet);
+        if (!qr) {
+            return null;
+        }
+
+        var context = C2S(settings.size, settings.size);
+        context.clearRect(0, 0, settings.size, settings.size);
+        context.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+
+        drawBackground(qr, context, settings);
+        drawModules(qr, context, settings);
+
+        return context.getSerializedSvg(true);
+    }
+
     var $canvasObj;
     var canvasSettings;
     var prevResizeFunc;
@@ -326,6 +342,13 @@
             window.addEventListener("resize", prevResizeFunc);
         }
         return drawOnCanvas($canvasObj, settings);
+    }
+
+    function createSvg(settings) {
+        var svgtext = drawOnSvg(settings);
+        var div = document.createElement('div');
+        div.innerHTML = svgtext;
+        return div.firstChild;
     }
 
     // Returns an `image` element representing the QR code for the given settings.
@@ -396,10 +419,11 @@
     function createHTML(settings) {
         if (hasCanvas && settings.render === 'canvas') {
             return createCanvas(settings);
+        } else if (hasCanvas && settings.render === 'svg') {
+            return createSvg(settings);
         } else if (hasCanvas && settings.render === 'image') {
             return createImage(settings);
         }
-
         return createDiv(settings);
     }
 
