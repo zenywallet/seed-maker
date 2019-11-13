@@ -153,28 +153,28 @@
 
         if (ne) {
             ctx.lineTo(r - rad, t);
-            ctx.arcTo(r, t, r, b, rad);
+            ctx.arcTo(r, t, r, t + rad, rad);
         } else {
             ctx.lineTo(r, t);
         }
 
         if (se) {
             ctx.lineTo(r, b - rad);
-            ctx.arcTo(r, b, l, b, rad);
+            ctx.arcTo(r, b, r - rad, b, rad);
         } else {
             ctx.lineTo(r, b);
         }
 
         if (sw) {
             ctx.lineTo(l + rad, b);
-            ctx.arcTo(l, b, l, t, rad);
+            ctx.arcTo(l, b, l, b - rad, rad);
         } else {
             ctx.lineTo(l, b);
         }
 
         if (nw) {
             ctx.lineTo(l, t + rad);
-            ctx.arcTo(l, t, r, t, rad);
+            ctx.arcTo(l, t, l + rad, t, rad);
         } else {
             ctx.lineTo(l, t);
         }
