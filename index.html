@@ -15,7 +15,14 @@
 <div id="qrcode-svg"></div>
 <div id="seed"></div>
 <button id="btn-download-pdf">Download PDF</button>
+<div>
+<iframe id="pdf-preview" type="application/pdf" width="640" height="480"></iframe>
+</div>
 <script>
+var preview_iframe = document.getElementById("pdf-preview");
+preview_iframe.contentWindow.document.open();
+preview_iframe.contentWindow.document.write('');
+preview_iframe.contentWindow.document.close();
 var crypto = window.crypto || window.msCrypto;
 if(crypto && crypto.getRandomValues) {
   var priv = new Uint8Array(32);
@@ -169,6 +176,7 @@ if(crypto && crypto.getRandomValues) {
     pdf.roundedRect((10 + 4 - 2) * k + 1, (7 + 54 + 2 + 28) * k - 13, (54 - 8 + 4) * k - 2, 12, 3, 3, 'FD');
 
     pdf.viewerPreferences({'FitWindow': true}, true);
+    preview_iframe.src = pdf.output('datauristring');
     pdf.save('seedcard-' + tag + '.pdf');
   }
 
