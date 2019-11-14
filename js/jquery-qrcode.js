@@ -326,14 +326,19 @@
             return null;
         }
 
-        var $canvas = jq(canvas).data('qrcode', qr);
-        $canvas[0].width = settings.size * pixel_ratio;
-        $canvas[0].height = settings.size * pixel_ratio;
-        $canvas[0].style.width = settings.size + "px";
-        $canvas[0].style.height = settings.size + "px";
-        var context = $canvas[0].getContext('2d');
-        context.clearRect(0, 0, $canvas[0].width, $canvas[0].height);
-        context.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+        var context;
+        if(settings.renderContext) {
+          context = settings.renderContext;
+        } else {
+          var $canvas = jq(canvas).data('qrcode', qr);
+          $canvas[0].width = settings.size * pixel_ratio;
+          $canvas[0].height = settings.size * pixel_ratio;
+          $canvas[0].style.width = settings.size + "px";
+          $canvas[0].style.height = settings.size + "px";
+          context = $canvas[0].getContext('2d');
+          context.clearRect(0, 0, $canvas[0].width, $canvas[0].height);
+          context.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+        }
 
         drawBackground(qr, context, settings);
         drawModules(qr, context, settings);
@@ -468,6 +473,7 @@
     var defaults = {
         // render method: `'canvas'`, `'image'` or `'div'`
         render: 'canvas',
+        renderContext: null,
 
         // version range somewhere in 1 .. 40
         minVersion: 1,
