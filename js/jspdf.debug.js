@@ -3012,6 +3012,12 @@
        * @param {number} rx Radius along x axis (in units declared at inception of PDF document).
        * @param {number} ry Radius along y axis (in units declared at inception of PDF document).
        * @param {string} style A string specifying the painting style or null.  Valid styles include: 'S' [default] - stroke, 'F' - fill,  and 'DF' (or 'FD') -  fill then stroke. A null value postpones setting the style so that a shape may be composed using multiple method calls. The last drawing method call used to define the shape should not have a null style argument.
+
+       *
+       * In "advanced" API mode this parameter is deprecated.
+       * @param {String=} patternKey The pattern key for the pattern that should be used to fill the primitive. Deprecated!
+       * @param {(Matrix|PatternData)=} patternData The matrix that transforms the pattern into user space, or an object that
+       * will modify the pattern on use. Deprecated!
        * @function
        * @instance
        * @returns {jsPDF}
@@ -3020,14 +3026,16 @@
        */
 
 
-      var roundedRect = API.__private__.roundedRect = API.roundedRect = function (x, y, w, h, rx, ry, style) {
+      var roundedRect = API.__private__.roundedRect = API.roundedRect = function (x, y, w, h, rx, ry, style, patternKey, patternData) {
         if (isNaN(x) || isNaN(y) || isNaN(w) || isNaN(h) || isNaN(rx) || isNaN(ry) || !isValidStyle(style)) {
           throw new Error('Invalid arguments passed to jsPDF.roundedRect');
         }
 
         var MyArc = 4 / 3 * (Math.SQRT2 - 1);
+        rx = Math.min(rx, w * 0.5);
+        ry = Math.min(ry, h * 0.5);
         this.lines([[w - 2 * rx, 0], [rx * MyArc, 0, rx, ry - ry * MyArc, rx, ry], [0, h - 2 * ry], [0, ry * MyArc, -(rx * MyArc), ry, -rx, ry], [-w + 2 * rx, 0], [-(rx * MyArc), 0, -rx, -(ry * MyArc), -rx, -ry], [0, -h + 2 * ry], [0, -(ry * MyArc), rx * MyArc, -ry, rx, -ry]], x + rx, y, // start of path
-        [1, 1], style);
+        [1, 1], style, true, patternKey, patternData);
         return this;
       };
       /**
@@ -3038,6 +3046,11 @@
        * @param {number} rx Radius along x axis (in units declared at inception of PDF document).
        * @param {number} ry Radius along y axis (in units declared at inception of PDF document).
        * @param {string} style A string specifying the painting style or null.  Valid styles include: 'S' [default] - stroke, 'F' - fill,  and 'DF' (or 'FD') -  fill then stroke. A null value postpones setting the style so that a shape may be composed using multiple method calls. The last drawing method call used to define the shape should not have a null style argument.
+       *
+       * In "advanced" API mode this parameter is deprecated.
+       * @param {String=} patternKey The pattern key for the pattern that should be used to fill the primitive. Deprecated!
+       * @param {(Matrix|PatternData)=} patternData The matrix that transforms the pattern into user space, or an object that
+       * will modify the pattern on use. Deprecated!
        * @function
        * @instance
        * @returns {jsPDF}
@@ -3046,22 +3059,19 @@
        */
 
 
-      var ellise = API.__private__.ellipse = API.ellipse = function (x, y, rx, ry, style) {
+      var ellise = API.__private__.ellipse = API.ellipse = function (x, y, rx, ry, style, patternKey, patternData) {
         if (isNaN(x) || isNaN(y) || isNaN(rx) || isNaN(ry) || !isValidStyle(style)) {
           throw new Error('Invalid arguments passed to jsPDF.ellipse');
         }
 
         var lx = 4 / 3 * (Math.SQRT2 - 1) * rx,
             ly = 4 / 3 * (Math.SQRT2 - 1) * ry;
-        out([f2(getHorizontalCoordinate(x + rx)), f2(getVerticalCoordinate(y)), 'm', f2(getHorizontalCoordinate(x + rx)), f2(getVerticalCoordinate(y - ly)), f2(getHorizontalCoordinate(x + lx)), f2(getVerticalCoordinate(y - ry)), f2(getHorizontalCoordinate(x)), f2(getVerticalCoordinate(y - ry)), 'c'].join(' '));
-        out([f2(getHorizontalCoordinate(x - lx)), f2(getVerticalCoordinate(y - ry)), f2(getHorizontalCoordinate(x - rx)), f2(getVerticalCoordinate(y - ly)), f2(getHorizontalCoordinate(x - rx)), f2(getVerticalCoordinate(y)), 'c'].join(' '));
-        out([f2(getHorizontalCoordinate(x - rx)), f2(getVerticalCoordinate(y + ly)), f2(getHorizontalCoordinate(x - lx)), f2(getVerticalCoordinate(y + ry)), f2(getHorizontalCoordinate(x)), f2(getVerticalCoordinate(y + ry)), 'c'].join(' '));
-        out([f2(getHorizontalCoordinate(x + lx)), f2(getVerticalCoordinate(y + ry)), f2(getHorizontalCoordinate(x + rx)), f2(getVerticalCoordinate(y + ly)), f2(getHorizontalCoordinate(x + rx)), f2(getVerticalCoordinate(y)), 'c'].join(' '));
-
-        if (style !== null) {
-          out(getStyle(style));
-        }
-
+        moveTo(x + rx, y);
+        curveTo(x + rx, y - ly, x + lx, y - ry, x, y - ry);
+        curveTo(x - lx, y - ry, x - rx, y - ly, x - rx, y);
+        curveTo(x - rx, y + ly, x - lx, y + ry, x, y + ry);
+        curveTo(x + lx, y + ry, x + rx, y + ly, x + rx, y);
+        putStyle(style, patternKey, patternData);
         return this;
       };
       /**
