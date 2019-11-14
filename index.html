@@ -6,6 +6,7 @@
   <script type="text/javascript" src="js/jquery-qrcode.js"></script>
   <script type="text/javascript" src="js/base58.js"></script>
   <script type="text/javascript" src="js/jspdf.debug.js"></script>
+  <script type="text/javascript" src="js/RobotoMono-Bold.js"></script>
   <title>Seed Maker</title>
 </head>
 <body>
@@ -70,12 +71,6 @@ if(crypto && crypto.getRandomValues) {
       format: [100 * k, 148 * k]
     });
 
-    //console.log(pdf.getFontList());
-
-    //pdf.addFont('courier', 'normal');
-    pdf.setFont('courier');
-    pdf.setFontType("bold");
-
     pdf.setFillColor(255,255,200);
     pdf.rect(0, 0, 148 * k, 100 * k, 'F');
     pdf.setFillColor(200,200,200);
@@ -109,6 +104,8 @@ if(crypto && crypto.getRandomValues) {
       fontcolor: '#393939'
     });
 
+    pdf.addFont('RobotoMono-Bold.ttf', 'RobotoMono-Bold', 'bold');
+    pdf.setFont('RobotoMono-Bold');
     pdf.setFontSize(12);
     pdf.setTextColor(117,117,117);
     pdf.text((10 + 54 / 2) * k, (7 + 54 / 2) * k + 4,'Seed', null, null, 'center');
