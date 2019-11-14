@@ -369,6 +369,9 @@
     // Returns a `canvas` element representing the QR code for the given settings.
     function createCanvas(settings) {
         arcto_mode = 0;
+        if(settings.renderContext) {
+          return drawOnCanvas(null, settings);
+        }
         $canvasObj = jq('<canvas/>');
         canvasSettings = settings;
         if(!prevResizeFunc) {
