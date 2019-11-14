@@ -12,7 +12,10 @@
 <body>
 <div id="qrcode"></div>
 <div id="seed"></div>
-<button id="btn-download-pdf">Download PDF</button>
+<div>
+<button id="btn-download-type1">Download PDF (layout 1)</button>
+<button id="btn-download-type2">Download PDF (layout 2)</button>
+</div>
 <div>
 <iframe id="pdf-preview" type="application/pdf" width="640" height="480"></iframe>
 </div>
@@ -63,116 +66,176 @@ if(crypto && crypto.getRandomValues) {
     fontcolor: '#393939'
   });
 
-  function downloadPdf() {
-    var k = 72 / 25.4;
+  var pt_ratio = 72 / 25.4;
+  var card_layouts = [
+    {
+      name: 'layout type 1 (landscape)',
+      width: 148,
+      height: 100,
+      card: {
+        width: 54,
+        height: 86,
+        margin_x: 2,
+        margin_y: 2,
+        round: 3
+      },
+      card_positions: [{x: 10, y: 7}, {x: 10 + 54 + 20, y: 7}]
+    },
+    {
+      name: 'layout type 2 (landscape)',
+      width: 148.5,
+      height: 100,
+      card: {
+        width: 54,
+        height: 85.6,
+        margin_x: 2,
+        margin_y: 2,
+        round: 3
+      },
+      card_positions: [{x: 18, y: 7.2}, {x: 18 + 54 + 4.5, y: 7.2}]
+    }
+  ];
+
+  function downloadPdf(layout) {
+
+    var w = layout.width * pt_ratio;
+    var h = layout.height * pt_ratio;
+    var landscape = (w > h);
     var pdf = new jsPDF({
-      orientation: 'l',
+      orientation: landscape ? 'l' : 'p',
       unit: 'pt',
-      format: [100 * k, 148 * k]
+      format: [landscape ? h : w, landscape ? w : h]
     });
-
-    pdf.setFillColor(255,255,200);
-    pdf.rect(0, 0, 148 * k, 100 * k, 'F');
-    pdf.setFillColor(200,200,200);
-    var margin_x = 2 * k;
-    var margin_y = 2 * k;
-    pdf.rect(10 * k - margin_x, 7 * k - margin_y, 54 * k + 2 * margin_x, 86 * k + 2 * margin_y, 'F');
-    pdf.rect(84 * k - margin_x, 7 * k - margin_y, 54 * k + 2 * margin_x, 86 * k + 2 * margin_y, 'F');
-    pdf.setFillColor(255,255,255);
-    pdf.roundedRect(10 * k, 7 * k, 54 * k, 86 * k, 3 * k, 3 * k, 'F');
-    pdf.roundedRect(84 * k, 7 * k, 54 * k, 86 * k, 3 * k, 3 * k, 'F');
-    pdf.setFillColor(230,230,230);
-    pdf.rect(10 * k, (7 + 54) * k, 54 * k, 4 * k, 'F');
-    pdf.roundedRect((10) * k, (7 + 54) * k, (54) * k, 32 * k, 3 * k, 3 * k, 'F');
-
-    var pt_ratio = 72 / 25.4;
-    var qr_margin = 4;
-    var svg_s = (54 - qr_margin * 2) * pt_ratio;
-    $('#qrcode').qrcode({
-      render: 'canvas',
-      renderContext: pdf.context2d,
-      top: (7 + qr_margin) * pt_ratio,
-      left: (10 + qr_margin) * pt_ratio,
-      ecLevel: 'Q',
-      radius: 0.39,
-      text: seedstr,
-      size: svg_s,
-      mode: 2,
-      label: '             ',
-      mSize: 0.05,
-      fontname: 'sans-serif',
-      fontcolor: '#393939'
-    });
-
     pdf.addFont('RobotoMono-Bold.ttf', 'RobotoMono-Bold', 'bold');
-    pdf.setFont('RobotoMono-Bold');
-    pdf.setFontSize(12);
-    pdf.setTextColor(117,117,117);
-    pdf.text((10 + 54 / 2) * k, (7 + 54 / 2) * k + 4,'Seed', null, null, 'center');
-
-    pdf.setTextColor(87,87,87);
-    pdf.text((10 + 4) * k, (7 + 54 + 2) * k + 10, 'Seed');
-    pdf.setFontSize(6);
-    pdf.text((10 + 4) * k, (7 + 54 + 2) * k + 18, 'pastel-v0.1');
 
     var s = Math.ceil(priv_base58.length / 2);
     var upper = priv_base58.substring(0, s);
     var lower = priv_base58.substring(s);
-    console.log(upper);
-    console.log(lower);
-    var upper2 = '';
-    var lower2 = '';
+    var upper_tmp = '';
+    var lower_tmp = '';
     for(var i = 0; i < upper.length; i += 4) {
-      upper2 += upper.substr(i, 4) + ' ';
+      upper_tmp += upper.substr(i, 4) + ' ';
     }
     for(var i = 0; i < lower.length; i += 4) {
-      lower2 += lower.substr(i, 4) + ' ';
+      lower_tmp += lower.substr(i, 4) + ' ';
     }
-    upper2 = upper2.trim();
-    if(upper2.length < lower2.length) {
-      lower2 = lower2.trim();
+    upper_tmp = upper_tmp.trim();
+    if(upper_tmp.length < lower_tmp.length) {
+      lower_tmp = lower_tmp.trim();
     }
-    pdf.setFontSize(8);
-    pdf.text((10 + 54 / 2) * k, (7 + 54 + 2) * k + 38, upper2, null, null, 'center');
-    pdf.text((10 + 54 / 2) * k, (7 + 54 + 2) * k + 54, lower2, null, null, 'center');
-    var tag_x = 49 * k;
-    var tag_y = 63 * k;
-    var ctx = pdf.context2d;
-    ctx.fillStyle = 'rgb(250,250,250)';
-    ctx.strokeStyle = 'rgb(250,250,250)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(tag_x, tag_y);
-    ctx.lineTo(tag_x - 7, tag_y + 6);
-    ctx.lineTo(tag_x, tag_y + 12);
-    ctx.lineTo(tag_x + 32, tag_y + 12);
-    ctx.lineTo(tag_x + 32, tag_y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    upper = upper_tmp;
+    lower = lower_tmp;
 
-    pdf.setFillColor(250,250,250);
-    pdf.setDrawColor(250,250,250);
-    pdf.roundedRect(tag_x + 32 - 2, tag_y, 4, 12, 2, 2, 'FD');
-    pdf.setFillColor(230,230,230);
-    pdf.roundedRect(tag_x - 3, tag_y + 4.5, 3, 3, 3, 3, 'F');
+    // all page area
+    pdf.setFillColor(255, 255, 200);
+    pdf.rect(0, 0, w, h, 'F');
 
-    pdf.setTextColor(87,87,87);
-    pdf.setFontSize(7);
-    pdf.text((10 + 54 - 4) * k - 1, (7 + 54 + 2) * k + 8.2, tag, null, null, 'right');
+    // card area
+    var card_w = layout.card.width * pt_ratio;
+    var card_h = layout.card.height * pt_ratio;
+    var card_margin_x = layout.card.margin_x * pt_ratio;
+    var card_margin_y = layout.card.margin_y * pt_ratio;
+    var card_round = layout.card.round * pt_ratio;
+    for(var i in layout.card_positions) {
+      var pos = layout.card_positions[i];
+      var x = pos.x * pt_ratio;
+      var y = pos.y * pt_ratio;
 
-    pdf.setFillColor(250,250,250);
-    pdf.setDrawColor(250,250,250);
-    pdf.roundedRect((10 + 4 - 2) * k + 1, (7 + 54 + 2 + 28) * k - 13, (54 - 8 + 4) * k - 2, 12, 3, 3, 'FD');
+      // card margin
+      pdf.setFillColor(200, 200, 200);
+      pdf.rect(x - card_margin_x, y - card_margin_y,
+              card_w + card_margin_x * 2, card_h + card_margin_y * 2, 'F');
+
+      // card body
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(x, y, card_w, card_h, card_round, card_round, 'F');
+
+      // card info area
+      pdf.setFillColor(230, 230, 230);
+      pdf.rect(x, card_w + y, card_w, card_round, 'F');
+      pdf.roundedRect(x, card_w + y, card_w, Math.abs(card_h - card_w), card_round, card_round, 'F');
+
+      // QR
+      var qr_margin = 4 * pt_ratio;
+      var svg_s = (card_w < card_h ? card_w : card_h) - qr_margin * 2;
+      $('#qrcode').qrcode({
+        render: 'canvas',
+        renderContext: pdf.context2d,
+        left: (x + qr_margin),
+        top: (y + qr_margin),
+        ecLevel: 'Q',
+        radius: 0.39,
+        text: seedstr,
+        size: svg_s,
+        mode: 2,
+        label: '             ',
+        mSize: 0.05,
+        fontname: 'sans-serif',
+        fontcolor: '#393939'
+      });
+
+      pdf.setFont('RobotoMono-Bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(117, 117, 117);
+      var center_x = x + card_w / 2;
+      pdf.text(center_x, y + card_w / 2 + 4, 'Seed', null, null, 'center');
+
+      pdf.setTextColor(87, 87, 87);
+      pdf.text(x + qr_margin, y + card_w + 2 * pt_ratio + 10, 'Seed');
+      pdf.setFontSize(6);
+      pdf.text(x + qr_margin, y + card_w + 2 * pt_ratio + 18, 'pastel-v0.1');
+
+      pdf.setFontSize(8);
+      pdf.text(center_x, y + card_w + 2 * pt_ratio + 38, upper, null, null, 'center');
+      pdf.text(center_x, y + card_w + 2 * pt_ratio + 54, lower, null, null, 'center');
+
+      // tag background
+      var tag_x = x + card_w - 15 * pt_ratio;
+      var tag_y = y + card_w + 2 * pt_ratio;
+      var ctx = pdf.context2d;
+      ctx.fillStyle = 'rgb(250,250,250)';
+      ctx.strokeStyle = 'rgb(250,250,250)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tag_x, tag_y);
+      ctx.lineTo(tag_x - 7, tag_y + 6);
+      ctx.lineTo(tag_x, tag_y + 12);
+      ctx.lineTo(tag_x + 32, tag_y + 12);
+      ctx.lineTo(tag_x + 32, tag_y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      pdf.setFillColor(250, 250, 250);
+      pdf.setDrawColor(250, 250, 250);
+      pdf.roundedRect(tag_x + 32 - 2, tag_y, 4, 12, 2, 2, 'FD');
+      pdf.setFillColor(230, 230, 230);
+      pdf.roundedRect(tag_x - 3, tag_y + 4.5, 3, 3, 3, 3, 'F');
+
+      // tag text
+      pdf.setTextColor(87, 87, 87);
+      pdf.setFontSize(7);
+      pdf.text(x + card_w - qr_margin - 1, y + card_w + 2 * pt_ratio + 8.2, tag, null, null, 'right');
+
+      // seed vector, memo area
+      pdf.setFillColor(250, 250, 250);
+      pdf.setDrawColor(250, 250, 250);
+      pdf.roundedRect(x + 2 * pt_ratio + 1, y + card_w + (2 + 28) * pt_ratio - 13,
+                    card_w - (2 * pt_ratio + 1) * 2, 12, 3, 3, 'FD');
+
+    }
 
     pdf.viewerPreferences({'FitWindow': true}, true);
     preview_iframe.src = pdf.output('datauristring');
     pdf.save('seedcard-' + tag + '.pdf');
   }
 
-  var btn_download_pdf = document.getElementById('btn-download-pdf');
-  btn_download_pdf.addEventListener('click', function() {
-    downloadPdf();
+  var btn_download_type1 = document.getElementById('btn-download-type1');
+  btn_download_type1.addEventListener('click', function() {
+    downloadPdf(card_layouts[0]);
+  });
+  var btn_download_type2 = document.getElementById('btn-download-type2');
+  btn_download_type2.addEventListener('click', function() {
+    downloadPdf(card_layouts[1]);
   });
 
 } else {
