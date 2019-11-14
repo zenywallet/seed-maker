@@ -3,16 +3,13 @@
 <head>
   <meta charset="utf-8">
   <script type="text/javascript" src="js/jquery-3.4.1.slim.min.js"></script>
-  <script type="text/javascript" src="js/canvas2svg.js"></script>
   <script type="text/javascript" src="js/jquery-qrcode.js"></script>
   <script type="text/javascript" src="js/base58.js"></script>
-  <script type="text/javascript" src="js/jspdf.min.js"></script>
-  <script type="text/javascript" src="js/svg2pdf.min.js"></script>
+  <script type="text/javascript" src="js/jspdf.debug.js"></script>
   <title>Seed Maker</title>
 </head>
 <body>
 <div id="qrcode"></div>
-<div id="qrcode-svg"></div>
 <div id="seed"></div>
 <button id="btn-download-pdf">Download PDF</button>
 <div>
@@ -65,22 +62,6 @@ if(crypto && crypto.getRandomValues) {
     fontcolor: '#393939'
   });
 
-  $('#qrcode-svg').hide();
-  var qr_margin = 4;
-  var svg_s = (54 - qr_margin * 2) * 72 / 25.4;
-  $('#qrcode-svg').qrcode({
-    render: 'svg',
-    ecLevel: 'Q',
-    radius: 0.39,
-    text: seedstr,
-    size: svg_s,
-    mode: 2,
-    label: '             ',
-    mSize: 0.05,
-    fontname: 'sans-serif',
-    fontcolor: '#393939'
-  });
-
   function downloadPdf() {
     var k = 72 / 25.4;
     var pdf = new jsPDF({
@@ -109,11 +90,23 @@ if(crypto && crypto.getRandomValues) {
     pdf.rect(10 * k, (7 + 54) * k, 54 * k, 4 * k, 'F');
     pdf.roundedRect((10) * k, (7 + 54) * k, (54) * k, 32 * k, 3 * k, 3 * k, 'F');
 
-    var svgobj = document.getElementById('qrcode-svg').firstChild;
-    svg2pdf(svgobj, pdf, {
-      xOffset: 10 * k + qr_margin * k,
-      yOffset: 7 * k + qr_margin * k,
-      scale: 1
+    var pt_ratio = 72 / 25.4;
+    var qr_margin = 4;
+    var svg_s = (54 - qr_margin * 2) * pt_ratio;
+    $('#qrcode').qrcode({
+      render: 'canvas',
+      renderContext: pdf.context2d,
+      top: (7 + qr_margin) * pt_ratio,
+      left: (10 + qr_margin) * pt_ratio,
+      ecLevel: 'Q',
+      radius: 0.39,
+      text: seedstr,
+      size: svg_s,
+      mode: 2,
+      label: '             ',
+      mSize: 0.05,
+      fontname: 'sans-serif',
+      fontcolor: '#393939'
     });
 
     pdf.setFontSize(12);
