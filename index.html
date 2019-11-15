@@ -96,8 +96,8 @@ if(crypto && crypto.getRandomValues) {
     }
   ];
 
-  function downloadPdf(layout) {
-
+  function downloadPdf(settings) {
+    var layout = settings.layout;
     var w = layout.width * pt_ratio;
     var h = layout.height * pt_ratio;
     var landscape = (w > h);
@@ -237,11 +237,11 @@ if(crypto && crypto.getRandomValues) {
 
   var btn_download_type1 = document.getElementById('btn-download-type1');
   btn_download_type1.addEventListener('click', function() {
-    downloadPdf(card_layouts[0]);
+    downloadPdf({layout: card_layouts[0]});
   });
   var btn_download_type2 = document.getElementById('btn-download-type2');
   btn_download_type2.addEventListener('click', function() {
-    downloadPdf(card_layouts[1]);
+    downloadPdf({layout: card_layouts[1]});
   });
 
 } else {
