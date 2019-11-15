@@ -107,7 +107,13 @@ if(crypto && crypto.getRandomValues) {
       format: [landscape ? h : w, landscape ? w : h]
     });
     pdf.addFont('RobotoMono-Bold.ttf', 'RobotoMono-Bold', 'bold');
-
+    pdf.setProperties({
+      title: 'Seed Card',
+      subject: 'Generated seed card for cryptocurrency wallets',
+      author: 'zenywallet',
+      keywords: 'seed, maker, generator, cryptocurrency, wallet',
+      creator: 'Seed Maker'
+    });
     var s = Math.ceil(priv_base58.length / 2);
     var upper = priv_base58.substring(0, s);
     var lower = priv_base58.substring(s);
