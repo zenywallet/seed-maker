@@ -164,7 +164,7 @@ if(crypto && crypto.getRandomValues) {
       // QR
       var qr_margin = 4 * pt_ratio;
       var svg_s = (card_w < card_h ? card_w : card_h) - qr_margin * 2;
-      $('#qrcode').qrcode({
+      $('<div></div>').qrcode({
         render: 'canvas',
         renderContext: pdf.context2d,
         left: (x + qr_margin),
