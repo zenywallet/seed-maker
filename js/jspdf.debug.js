@@ -10005,9 +10005,7 @@
 
 
     Context2D.prototype.arcTo = function (x1, y1, x2, y2, radius) {
-      var x0 = this.ctx.lastPoint.x;
-      var y0 = this.ctx.lastPoint.y;
-      this.bezierCurveTo(x0, y0, x1, y1, x2, y2);
+      this.quadraticCurveTo(x1, y1, x2, y2);
     };
     /**
     * Creates a rectangle
