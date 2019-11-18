@@ -73,6 +73,7 @@ if(crypto && crypto.getRandomValues) {
   var card_layouts = [
     {
       name: 'layout type 1 (landscape)',
+      name_short: 'layout1',
       width: 148,
       height: 100,
       card: {
@@ -86,6 +87,7 @@ if(crypto && crypto.getRandomValues) {
     },
     {
       name: 'layout type 2 (landscape)',
+      name_short: 'layout2',
       width: 148.5,
       height: 100,
       card: {
@@ -245,7 +247,7 @@ if(crypto && crypto.getRandomValues) {
 
     pdf.viewerPreferences({'FitWindow': true}, true);
     preview_iframe.src = pdf.output('datauristring');
-    pdf.save('seedcard-' + tag + '.pdf');
+    pdf.save('seedcard-' + tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
   }
 
   var btn_download_type1 = document.getElementById('btn-download-type1');
