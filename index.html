@@ -2,25 +2,36 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <link rel="stylesheet" href="css/dark.css">
   <script type="text/javascript" src="js/jquery-3.4.1.slim.min.js"></script>
   <script type="text/javascript" src="js/jquery-qrcode.min.js"></script>
   <script type="text/javascript" src="js/base58.js"></script>
   <script type="text/javascript" src="js/jspdf.min.js"></script>
   <script type="text/javascript" src="js/RobotoMono-Bold.js"></script>
+  <script type="text/javascript" src="js/pdf.min.js"></script>
   <title>Seed Maker</title>
 </head>
 <body>
-<div id="qrcode"></div>
-<div id="seed"></div>
-<div>
-<form name="form" action="#">
-  <input id="printable" type="checkbox"> printable
-</form>
-<button id="btn-download-type1">Download PDF (layout 1)</button>
-<button id="btn-download-type2">Download PDF (layout 2)</button>
-</div>
-<div>
-<iframe id="pdf-preview" type="application/pdf" width="640" height="480"></iframe>
+<div id="content">
+  <h2>Seed Maker</h2>
+  <p>Generate a seed card and PDF for printing in the browser. Seed card can be used for various cryptocurrency wallets or user identifications.</p>
+  <div id="seed"></div>
+  <ul class="button-list">
+    <li><div id="btn-generate-new" class="button">Generate New Seed</div></li>
+  </ul>
+  <h3>Generated Seed Card Image</h3>
+  <div id="card-wrapper"><canvas id="card-canvas"></canvas></div>
+  <h3>Printing Layout</h3>
+  <ul class="vertical-list">
+    <li><div id="btn-layout1" class="button btn-layout" data-id="0"><div class="layout-selector"><span class="select"></span></div>Layout 1 (A-one) [Post Card 148 × 100 mm]</div></li>
+    <li><div id="btn-layout2" class="button btn-layout" data-id="1"><div class="layout-selector"><span class=""></span></div>Layout 2 (snap card) [Post Card 148.5 × 100 mm]</div></li>
+  </ul>
+  <div id="pdf-preview-wrapper"><iframe id="pdf-preview" type="application/pdf" width="660" height="500" frameBorder="0"></iframe></div>
+  <ul class="button-list">
+    <li><div id="btn-print" class="button">Print Seed Card</div></li>
+    <li class="separator"><div id="btn-download-printable" class="button">Download PDF (Printable)</div></li>
+    <li><div id="btn-download-image" class="button">Download PDF (Card Image)</div></li>
+  </ul>
 </div>
 <script>
 var preview_iframe = document.getElementById("pdf-preview");
@@ -29,45 +40,36 @@ preview_iframe.contentWindow.document.write('');
 preview_iframe.contentWindow.document.close();
 var crypto = window.crypto || window.msCrypto;
 if(crypto && crypto.getRandomValues) {
-  var priv = new Uint8Array(32);
-  crypto.getRandomValues(priv);
-  var priv_base58 = base58.enc(priv);
-  var priv_dec = priv_base58.dec();
-  var enc_err = 0;
-  if(priv.length != priv_dec.length) {
-    enc_err = 1;
-  } else {
-    for(var i in priv) {
-      if(priv[i] != priv_dec[i]) {
-        enc_err = 1;
-        break;
+  function generateNewSeed() {
+    var priv = new Uint8Array(32);
+    crypto.getRandomValues(priv);
+    var priv_base58 = base58.enc(priv);
+    var priv_dec = priv_base58.dec();
+    var enc_err = 0;
+    if(priv.length != priv_dec.length) {
+      enc_err = 1;
+    } else {
+      for(var i in priv) {
+        if(priv[i] != priv_dec[i]) {
+          enc_err = 1;
+          break;
+        }
       }
     }
-  }
-  if(enc_err) {
-    throw new Error('base58 encode failed.');
-  }
+    if(enc_err) {
+      throw new Error('base58 encode failed.');
+    }
 
-  var tags = new Uint8Array(6);
-  crypto.getRandomValues(tags);
-  var tag = "";
-  for(var i in tags) {
-    tag += base58_chars[tags[i] % 58]
+    var tags = new Uint8Array(6);
+    crypto.getRandomValues(tags);
+    var tag = "";
+    for(var i in tags) {
+      tag += base58_chars[tags[i] % 58]
+    }
+    var gen = 'pastel-v0.1';
+    var seed = 'seed:' + priv_base58 + ',tag:' + tag + ',gen:' + gen;
+    return {seed: seed, priv: priv_base58, tag: tag, gen: gen};
   }
-  var seedstr = 'seed:' + priv_base58 + ',tag:' + tag + ',gen:pastel-v0.1';
-  document.getElementById('seed').innerHTML = seedstr;
-  var canvas_s = 400;
-  $('#qrcode').qrcode({
-    render: 'canvas',
-    ecLevel: 'Q',
-    radius: 0.39,
-    text: seedstr,
-    size: canvas_s,
-    mode: 2,
-    label: 'seed',
-    fontname: 'sans-serif',
-    fontcolor: '#393939'
-  });
 
   var pt_ratio = 72 / 25.4;
   var card_layouts = [
@@ -101,9 +103,13 @@ if(crypto && crypto.getRandomValues) {
     }
   ];
 
-  function downloadPdf(settings) {
+  function createPdf(settings) {
     var layout = settings.layout;
     var printable = settings.printable;
+    var priv = settings.seed.priv;
+    var seedstr = settings.seed.seed;
+    var tag = settings.seed.tag;
+    var gen = settings.seed.gen;
     var w = layout.width * pt_ratio;
     var h = layout.height * pt_ratio;
     var landscape = (w > h);
@@ -120,9 +126,9 @@ if(crypto && crypto.getRandomValues) {
       keywords: 'seed, maker, generator, cryptocurrency, wallet',
       creator: 'Seed Maker'
     });
-    var s = Math.ceil(priv_base58.length / 2);
-    var upper = priv_base58.substring(0, s);
-    var lower = priv_base58.substring(s);
+    var s = Math.ceil(priv.length / 2);
+    var upper = priv.substring(0, s);
+    var lower = priv.substring(s);
     var upper_tmp = '';
     var lower_tmp = '';
     for(var i = 0; i < upper.length; i += 4) {
@@ -204,7 +210,7 @@ if(crypto && crypto.getRandomValues) {
       pdf.setTextColor(87, 87, 87);
       pdf.text(x + qr_margin, y + card_w + 2 * pt_ratio + 10, 'Seed');
       pdf.setFontSize(6);
-      pdf.text(x + qr_margin, y + card_w + 2 * pt_ratio + 18, 'pastel-v0.1');
+      pdf.text(x + qr_margin, y + card_w + 2 * pt_ratio + 18, gen);
 
       pdf.setFontSize(8);
       pdf.text(center_x, y + card_w + 2 * pt_ratio + 38, upper, null, null, 'center');
@@ -246,19 +252,156 @@ if(crypto && crypto.getRandomValues) {
     }
 
     pdf.viewerPreferences({'FitWindow': true}, true);
-    preview_iframe.src = pdf.output('datauristring');
-    pdf.save('seedcard-' + tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
+    return pdf;
   }
 
-  var btn_download_type1 = document.getElementById('btn-download-type1');
-  btn_download_type1.addEventListener('click', function() {
-    downloadPdf({layout: card_layouts[0], printable: document.form.printable.checked});
-  });
-  var btn_download_type2 = document.getElementById('btn-download-type2');
-  btn_download_type2.addEventListener('click', function() {
-    downloadPdf({layout: card_layouts[1], printable: document.form.printable.checked});
+  function getPixelRatio() {
+    var ctx = document.createElement("canvas").getContext("2d"),
+        dpr = window.devicePixelRatio || 1,
+        bsr = ctx.webkitBackingStorePixelRatio ||
+              ctx.mozBackingStorePixelRatio ||
+              ctx.msBackingStorePixelRatio ||
+              ctx.oBackingStorePixelRatio ||
+              ctx.backingStorePixelRatio || 1;
+    return dpr / bsr;
+  }
+  var pixel_ratio = getPixelRatio();
+  if(pixel_ratio < 1.0) {
+    pixel_ratio = 1.0;
+  }
+
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x+r, y);
+    this.arcTo(x+w, y,   x+w, y+h, r);
+    this.arcTo(x+w, y+h, x,   y+h, r);
+    this.arcTo(x,   y+h, x,   y,   r);
+    this.arcTo(x,   y,   x+w, y,   r);
+    this.closePath();
+    return this;
+  }
+
+  function clear_pdf_preview() {
+    var canvas = document.getElementById('card-canvas');
+    var context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  var prev_pdf_output = null;
+  var pdf_preview_busy = false;
+  function pdf_preview(pdf_output) {
+    pdf_preview_busy = true;
+    prev_pdf_output = pdf_output;
+    var loadingTask = pdfjsLib.getDocument(pdf_output);
+    loadingTask.promise.then(function(pdf) {
+      pdf.getPage(1).then(function(page) {
+        var scale = 4;
+        var reduction = scale / 2;
+        var viewport = page.getViewport({ scale: scale });
+        var pdfcanvas = document.createElement('canvas');
+        var pdfctx = pdfcanvas.getContext('2d');
+        pdfcanvas.width = viewport.width * pixel_ratio / reduction;
+        pdfcanvas.height = viewport.height * pixel_ratio;
+        pdfcanvas.style.width = Math.floor(viewport.width / reduction / 2) + 'px';
+        pdfcanvas.style.height = Math.floor(viewport.height / reduction) + 'px';
+        pdfctx.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+
+        var renderContext = {
+          canvasContext: pdfctx,
+          viewport: viewport,
+        };
+        page.render(renderContext).then(function() {
+          var ratio = pt_ratio * scale * pixel_ratio;
+          var img = pdfctx.getImageData(10 * ratio, 7 * ratio, 54 * ratio, 86 * ratio);
+          var canvas = document.getElementById('card-canvas');
+          var context = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.style.width = Math.floor(img.width / reduction) + 'px';
+          canvas.style.height = Math.floor(img.height / reduction) + 'px';
+
+          context.putImageData(img, 0, 0);
+          context.fillStyle = '#fff';
+          context.globalCompositeOperation = 'destination-in';
+          context.roundRect(0, 0, canvas.width, canvas.height, 3 * ratio).fill();
+          context.drawImage(canvas, 0, 0);
+          pdf_preview_busy = false;
+        });
+      });
+    });
+  }
+
+  var preview_resize_tval;
+  function preview_resize_worker() {
+    clearTimeout(preview_resize_tval);
+    if(!pdf_preview_busy) {
+      pdf_preview(prev_pdf_output);
+    } else {
+      preview_resize_tval = setTimeout(preview_resize_worker, 50);
+    }
+  }
+  window.addEventListener("resize", function() {
+    pixel_ratio = getPixelRatio();
+    if(pixel_ratio < 1.0) {
+      pixel_ratio = 1.0;
+    }
+    if(prev_pdf_output != null) {
+      preview_resize_worker();
+    }
   });
 
+  var cur_layout_id = 0;
+  var cur_seed = generateNewSeed();
+  document.getElementById('seed').innerHTML = cur_seed.seed;
+  var cur_pdf;
+  function updateSeed(seed) {
+    cur_pdf = createPdf({layout: card_layouts[cur_layout_id], printable: true, seed: seed});
+    var pdf_output = cur_pdf.output('datauristring');
+    if(cur_layout_id == 0) {
+      pdf_preview(pdf_output);
+    } else {
+      var pdf0 = createPdf({layout: card_layouts[0], printable: true, seed: seed});
+      var pdf0_output = pdf0.output('datauristring');
+      pdf_preview(pdf0_output);
+    }
+    preview_iframe.src = pdf_output;
+  }
+  updateSeed(cur_seed);
+
+  document.getElementById('btn-generate-new').onclick = function() {
+    clear_pdf_preview();
+    cur_seed = generateNewSeed();
+    document.getElementById('seed').innerHTML = cur_seed.seed;
+    updateSeed(cur_seed);
+  }
+
+  document.getElementById('btn-print').onclick = function() {
+    cur_pdf.autoPrint();
+    preview_iframe.src = cur_pdf.output('datauristring');
+  }
+
+  function downloadPDF(layout, printable, seed) {
+    var pdf = createPdf({layout: layout, printable: printable, seed: seed});
+    pdf.save('seedcard-' + seed.tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
+  }
+  document.getElementById('btn-download-printable').onclick = function() {
+    var layout = card_layouts[cur_layout_id];
+    downloadPDF(layout, true, cur_seed);
+  }
+
+  document.getElementById('btn-download-image').onclick = function() {
+    var layout = card_layouts[cur_layout_id];
+    downloadPDF(layout, false, cur_seed);
+  }
+
+  $('.btn-layout').click(function() {
+    $('.layout-selector span').removeClass('select');
+    $(this).find('.layout-selector span').addClass('select');
+    cur_layout_id = Number($(this).data('id'));
+    updateSeed(cur_seed);
+  });
 } else {
   throw new Error('Secure random number generation is not supported by this browser.');
 }
