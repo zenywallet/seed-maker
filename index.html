@@ -319,8 +319,8 @@ if(crypto && crypto.getRandomValues) {
           var context = canvas.getContext('2d');
           canvas.width = img.width;
           canvas.height = img.height;
-          canvas.style.width = Math.floor(img.width / reduction) + 'px';
-          canvas.style.height = Math.floor(img.height / reduction) + 'px';
+          canvas.style.width = Math.floor(img.width / pixel_ratio / reduction) + 'px';
+          canvas.style.height = Math.floor(img.height / pixel_ratio / reduction) + 'px';
 
           context.putImageData(img, 0, 0);
           context.fillStyle = '#fff';
