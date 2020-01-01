@@ -78,8 +78,8 @@
         ctx.font = font;
 
         var w = ctx.measureText(settings.label).width;
-        var sh = settings.mSize;
-        var sw = w / size;
+        var sh = settings.hSize || settings.mSize;
+        var sw = settings.wSize || w / size;
         var sl = (1 - sw) * settings.mPosX;
         var st = (1 - sh) * settings.mPosY;
         var sr = sl + sw;
@@ -103,8 +103,8 @@
         var size = settings.size;
         var w = settings.image.naturalWidth || 1;
         var h = settings.image.naturalHeight || 1;
-        var sh = settings.mSize;
-        var sw = sh * w / h;
+        var sh = settings.hSize || settings.mSize;
+        var sw = settings.wSize || sh * w / h;
         var sl = (1 - sw) * settings.mPosX;
         var st = (1 - sh) * settings.mPosY;
         var sr = sl + sw;
