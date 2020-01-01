@@ -344,15 +344,6 @@ if(crypto && crypto.getRandomValues) {
       preview_resize_tval = setTimeout(preview_resize_worker, 50);
     }
   }
-  window.addEventListener("resize", function() {
-    pixel_ratio = getPixelRatio();
-    if(pixel_ratio < 1.0) {
-      pixel_ratio = 1.0;
-    }
-    if(prev_pdf_output != null) {
-      preview_resize_worker();
-    }
-  });
 
   var cur_layout_id = 0;
   var cur_seed = generateNewSeed();
@@ -371,6 +362,16 @@ if(crypto && crypto.getRandomValues) {
     preview_iframe.src = pdf_output;
   }
   updateSeed(cur_seed);
+
+  window.addEventListener("resize", function() {
+    pixel_ratio = getPixelRatio();
+    if(pixel_ratio < 1.0) {
+      pixel_ratio = 1.0;
+    }
+    if(prev_pdf_output != null) {
+      preview_resize_worker();
+    }
+  });
 
   document.getElementById('btn-generate-new').onclick = function() {
     clear_pdf_preview();
