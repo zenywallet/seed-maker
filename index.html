@@ -379,9 +379,12 @@ if(crypto && crypto.getRandomValues) {
     updateSeed(cur_seed);
   }
 
+  var hiddenPrintFrame = document.createElement('iframe');
+  hiddenPrintFrame.style.visibility = "hidden";
+  document.body.appendChild(hiddenPrintFrame);
   document.getElementById('btn-print').onclick = function() {
     cur_pdf.autoPrint();
-    preview_iframe.src = cur_pdf.output('datauristring');
+    hiddenPrintFrame.src = cur_pdf.output('datauristring');
   }
 
   function downloadPDF(layout, printable, seed) {
