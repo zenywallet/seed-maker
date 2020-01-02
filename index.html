@@ -317,7 +317,7 @@ if(crypto && crypto.getRandomValues) {
     var loadingTask = pdfjsLib.getDocument(pdf_output);
     loadingTask.promise.then(function(pdf) {
       pdf.getPage(1).then(function(page) {
-        var scale = 4;
+        var scale = isMobile ? 2 : 4;
         var reduction = scale / 2;
         var viewport = page.getViewport({ scale: scale });
         var pdfcanvas = document.createElement('canvas');
@@ -364,7 +364,7 @@ if(crypto && crypto.getRandomValues) {
     var loadingTask = pdfjsLib.getDocument(pdf_output);
     loadingTask.promise.then(function(pdf) {
       pdf.getPage(1).then(function(page) {
-        var scale = 4;
+        var scale = isMobile ? 2 : 4;
         var reduction = scale / 1.58;
         var viewport = page.getViewport({ scale: scale });
         var pdfcanvas = document.createElement('canvas');
