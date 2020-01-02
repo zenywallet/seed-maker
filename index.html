@@ -311,7 +311,7 @@ if(crypto && crypto.getRandomValues) {
 
   var prev_pdf_output = null;
   var pdf_preview_busy = false;
-  function pdf_preview(pdf_output, cb) {
+  function pdf_preview(pdf_output) {
     pdf_preview_busy = true;
     prev_pdf_output = pdf_output;
     var loadingTask = pdfjsLib.getDocument(pdf_output);
@@ -348,9 +348,6 @@ if(crypto && crypto.getRandomValues) {
           context.roundRect(0, 0, canvas.width, canvas.height, 3 * ratio).fill();
           context.drawImage(canvas, 0, 0);
           pdf_preview_busy = false;
-          if(cb) {
-            cb();
-          }
         });
       });
     });
@@ -404,9 +401,8 @@ if(crypto && crypto.getRandomValues) {
     clearTimeout(preview_resize_tval);
     if(noFrame) {
       if(!pdf_preview_busy && !pdf_layout_busy) {
-        pdf_preview(prev_pdf_output, function() {
-          pdf_layout(prev_layout_pdf_output);
-        });
+        pdf_preview(prev_pdf_output);
+        pdf_layout(prev_layout_pdf_output);
       } else {
         preview_resize_tval = setTimeout(preview_resize_worker, 50);
       }
@@ -426,20 +422,17 @@ if(crypto && crypto.getRandomValues) {
   function updateSeed(seed) {
     cur_pdf = createPdf({layout: card_layouts[cur_layout_id], printable: true, seed: seed});
     var pdf_output = cur_pdf.output('datauristring');
-    var output;
     if(cur_layout_id == 0) {
-      output = pdf_output;
+      pdf_preview(pdf_output);
     } else {
       var pdf0 = createPdf({layout: card_layouts[0], printable: true, seed: seed});
-      output = pdf0.output('datauristring');
+      var pdf0_output = pdf0.output('datauristring');
+      pdf_preview(pdf0_output);
     }
     if(noFrame) {
-      pdf_preview(output, function() {
-        pdf_layout(output);
-    });
+      pdf_layout(pdf_output);
     } else {
-      pdf_preview(output);
-      preview_iframe.src = output;
+      preview_iframe.src = pdf_output;
     }
   }
   updateSeed(cur_seed);
