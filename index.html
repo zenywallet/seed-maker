@@ -26,7 +26,7 @@
     <li><div id="btn-layout1" class="button btn-layout" data-id="0"><div class="layout-selector"><span class="select"></span></div>Layout 1 (A-one) [Post Card 148 × 100 mm]</div></li>
     <li><div id="btn-layout2" class="button btn-layout" data-id="1"><div class="layout-selector"><span class=""></span></div>Layout 2 (snap card) [Post Card 148.5 × 100 mm]</div></li>
   </ul>
-  <div id="pdf-preview-wrapper"><iframe id="pdf-preview" type="application/pdf" width="660" height="500" frameBorder="0"></iframe></div>
+  <div id="pdf-preview-wrapper"></div>
   <ul class="button-list">
     <li><div id="btn-print" class="button">Print Seed Card</div></li>
     <li class="separator"><div id="btn-download-printable" class="button">Download PDF (Printable)</div></li>
@@ -34,10 +34,22 @@
   </ul>
 </div>
 <script>
-var preview_iframe = document.getElementById("pdf-preview");
-preview_iframe.contentWindow.document.open();
-preview_iframe.contentWindow.document.write('');
-preview_iframe.contentWindow.document.close();
+var ua = navigator.userAgent.toLowerCase();
+var isAndroid = ua.indexOf("android") >= 0;
+var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+var isMobile = (isAndroid || iOS) ? true : false;
+var noFrame = isMobile ? true : false;
+var pdfWrapper = document.getElementById("pdf-preview-wrapper");
+var preview_iframe;
+if(noFrame) {
+  pdfWrapper.innerHTML = '<canvas id="pdf-preview-canvas"></canvas>';
+} else {
+  pdfWrapper.innerHTML = '<iframe id="pdf-preview" type="application/pdf" width="660" height="500" frameBorder="0"></iframe>';
+  preview_iframe = document.getElementById("pdf-preview");
+  preview_iframe.contentWindow.document.open();
+  preview_iframe.contentWindow.document.write('');
+  preview_iframe.contentWindow.document.close();
+}
 var crypto = window.crypto || window.msCrypto;
 if(crypto && crypto.getRandomValues) {
   function generateNewSeed() {
@@ -291,6 +303,12 @@ if(crypto && crypto.getRandomValues) {
     context.clearRect(0, 0, canvas.width, canvas.height);
   }
 
+  function clear_pdf_layout() {
+    var canvas = document.getElementById('pdf-preview-canvas');
+    var context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
   var prev_pdf_output = null;
   var pdf_preview_busy = false;
   function pdf_preview(pdf_output) {
@@ -335,13 +353,65 @@ if(crypto && crypto.getRandomValues) {
     });
   }
 
+  var prev_layout_pdf_output = null;
+  var pdf_layout_busy = false;
+  function pdf_layout(pdf_output) {
+    pdf_layout_busy = true;
+    prev_layout_pdf_output = pdf_output;
+    var loadingTask = pdfjsLib.getDocument(pdf_output);
+    loadingTask.promise.then(function(pdf) {
+      pdf.getPage(1).then(function(page) {
+        var scale = 4;
+        var reduction = scale / 1.58;
+        var viewport = page.getViewport({ scale: scale });
+        var pdfcanvas = document.createElement('canvas');
+        var pdfctx = pdfcanvas.getContext('2d');
+        pdfcanvas.width = viewport.width * pixel_ratio;
+        pdfcanvas.height = viewport.height * pixel_ratio;
+        pdfcanvas.style.width = Math.floor(viewport.width / reduction) + 'px';
+        pdfcanvas.style.height = Math.floor(viewport.height / reduction) + 'px';
+        pdfctx.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+        var renderContext = {
+          canvasContext: pdfctx,
+          viewport: viewport,
+        };
+        page.render(renderContext).then(function() {
+          var img = pdfctx.getImageData(0, 0, pdfcanvas.width, pdfcanvas.height);
+          var canvas = document.getElementById('pdf-preview-canvas');
+          var context = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.style.width = Math.floor(img.width / pixel_ratio / reduction) + 'px';
+          canvas.style.height = Math.floor(img.height / pixel_ratio / reduction) + 'px';
+          pdfWrapper.style.height = canvas.style.height;
+
+          context.putImageData(img, 0, 0);
+          context.fillStyle = '#fff';
+          context.globalCompositeOperation = 'destination-in';
+          context.roundRect(0, 0, canvas.width, canvas.height, 3 * ratio).fill();
+          context.drawImage(canvas, 0, 0);
+          pdf_layout_busy = false;
+        });
+      });
+    });
+  }
+
   var preview_resize_tval;
   function preview_resize_worker() {
     clearTimeout(preview_resize_tval);
-    if(!pdf_preview_busy) {
-      pdf_preview(prev_pdf_output);
+    if(noFrame) {
+      if(!pdf_preview_busy && !pdf_layout_busy) {
+        pdf_preview(prev_pdf_output);
+        pdf_layout(prev_layout_pdf_output);
+      } else {
+        preview_resize_tval = setTimeout(preview_resize_worker, 50);
+      }
     } else {
-      preview_resize_tval = setTimeout(preview_resize_worker, 50);
+      if(!pdf_preview_busy) {
+        pdf_preview(prev_pdf_output);
+      } else {
+        preview_resize_tval = setTimeout(preview_resize_worker, 50);
+      }
     }
   }
 
@@ -359,7 +429,11 @@ if(crypto && crypto.getRandomValues) {
       var pdf0_output = pdf0.output('datauristring');
       pdf_preview(pdf0_output);
     }
-    preview_iframe.src = pdf_output;
+    if(noFrame) {
+      pdf_layout(pdf_output);
+    } else {
+      preview_iframe.src = pdf_output;
+    }
   }
   updateSeed(cur_seed);
 
@@ -375,6 +449,9 @@ if(crypto && crypto.getRandomValues) {
 
   document.getElementById('btn-generate-new').onclick = function() {
     clear_pdf_preview();
+    if(noFrame) {
+      clear_pdf_layout();
+    }
     cur_seed = generateNewSeed();
     document.getElementById('seed').innerHTML = cur_seed.seed;
     updateSeed(cur_seed);
