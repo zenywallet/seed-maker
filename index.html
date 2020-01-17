@@ -28,6 +28,10 @@
   </ul>
   <div id="pdf-preview-wrapper"></div>
   <ul class="button-list">
+    <li>x: <input id="adjustment-x" class="adjustment-input" type="text" value="0"> mm</li>
+    <li>y: <input id="adjustment-y" class="adjustment-input" type="text" value="0"> mm</li>
+  </ul>
+  <ul class="button-list">
     <li><div id="btn-print" class="button">Print Seed Card</div></li>
     <li class="separator"><div id="btn-download-printable" class="button">Download PDF (Printable)</div></li>
     <li><div id="btn-download-image" class="button">Download PDF (Card Image)</div></li>
@@ -170,9 +174,8 @@ if(crypto && crypto.getRandomValues) {
     var card_round = layout.card.round * pt_ratio;
     for(var i in layout.card_positions) {
       var pos = layout.card_positions[i];
-      var x = pos.x * pt_ratio;
-      var y = pos.y * pt_ratio;
-
+      var x = (pos.x + cur_layout_x) * pt_ratio;
+      var y = (pos.y + cur_layout_y) * pt_ratio;
       if(!printable) {
         // card margin
         pdf.setFillColor(200, 200, 200);
@@ -334,7 +337,7 @@ if(crypto && crypto.getRandomValues) {
         };
         page.render(renderContext).then(function() {
           var ratio = pt_ratio * scale * pixel_ratio;
-          var img = pdfctx.getImageData(10 * ratio, 7 * ratio, 54 * ratio, 86 * ratio);
+          var img = pdfctx.getImageData((10 + cur_layout_x) * ratio, (7 + cur_layout_y) * ratio, 54 * ratio, 86 * ratio);
           var canvas = document.getElementById('card-canvas');
           var context = canvas.getContext('2d');
           canvas.width = img.width;
@@ -416,6 +419,8 @@ if(crypto && crypto.getRandomValues) {
   }
 
   var cur_layout_id = 0;
+  var cur_layout_x = Number(document.getElementById('adjustment-x').value) || 0;
+  var cur_layout_y = Number(document.getElementById('adjustment-y').value) || 0;
   var cur_seed = generateNewSeed();
   document.getElementById('seed').innerHTML = cur_seed.seed;
   var cur_pdf;
@@ -484,6 +489,16 @@ if(crypto && crypto.getRandomValues) {
     $(this).find('.layout-selector span').addClass('select');
     cur_layout_id = Number($(this).data('id'));
     updateSeed(cur_seed);
+  });
+
+  $('.adjustment-input').on('input', function() {
+    var ax = Number(document.getElementById('adjustment-x').value);
+    var ay = Number(document.getElementById('adjustment-y').value);
+    if(!Number.isNaN(ax) && !Number.isNaN(ay) && (cur_layout_x != ax || cur_layout_y != ay)) {
+      cur_layout_x = ax;
+      cur_layout_y = ay;
+      updateSeed(cur_seed);
+    }
   });
 } else {
   throw new Error('Secure random number generation is not supported by this browser.');
