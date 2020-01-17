@@ -215,7 +215,7 @@ input { margin: 0; padding: 0; }
   width: 10px;
   height: 10px;
   background: #992b35;
-  border-radius: 50%
+  border-radius: 50%;
 }
 .layout-label {
   display: inline-block;
