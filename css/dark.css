@@ -196,6 +196,7 @@ input { margin: 0; padding: 0; }
 }
 .layout-selector {
   display: inline-block;
+  vertical-align: top;
   width: 20px;
   position: relative;
   bottom: -1px;
@@ -203,15 +204,22 @@ input { margin: 0; padding: 0; }
 }
 .layout-selector span {
   display: inline-block;
+  vertical-align: top;
   width: 10px;
   height: 10px;
 }
 .layout-selector span.select {
   display: inline-block;
+  vertical-align: top;
+  margin-top: 3px;
   width: 10px;
   height: 10px;
   background: #992b35;
   border-radius: 50%
+}
+.layout-label {
+  display: inline-block;
+  vertical-align: top;
 }
 #card-canvas {
   margin: 12px 10px 10px;
