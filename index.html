@@ -20,7 +20,7 @@
     <li><div id="btn-generate-new" class="button">Generate New Seed</div></li>
   </ul>
   <h3>Generated Seed Card Image</h3>
-  <div id="card-wrapper"><canvas id="card-canvas"></canvas></div>
+  <div id="card-wrapper"><canvas id="card-canvas"></canvas><canvas id="card-canvas2"></canvas></div>
   <h3>Printing Layout</h3>
   <ul class="vertical-list">
     <li><div id="btn-layout1" class="button btn-layout" data-id="0"><div class="layout-selector"><span class="select"></span></div><span class="layout-label">Layout 1 [Post Card 148 × 100 mm]<br>A-one (ID Card 29531, 29532)</span></div></li>
@@ -220,7 +220,7 @@ if(crypto && crypto.getRandomValues) {
 
       pdf.setFont('RobotoMono-Bold');
       pdf.setFontSize(12);
-      pdf.setTextColor(117, 117, 117);
+      pdf.setTextColor(87, 87, 87);
       var center_x = x + card_w / 2;
       pdf.text(center_x, y + card_w / 2 + 4, 'Seed', null, null, 'center');
 
