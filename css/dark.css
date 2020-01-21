@@ -86,7 +86,7 @@ input { margin: 0; padding: 0; }
   background: -webkit-gradient(linear, left top, left bottom, color-stop(3%,#4C5A64), color-stop(4%,#404F5A), color-stop(100%,#2E3940)); /* webkit */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4C5A64', endColorstr='#2E3940',GradientType=0 ); /* ie */
 }
-.button:active {
+.button:active, .button.active {
   background-position: 0 top;
   position: relative;
   top: 1px;

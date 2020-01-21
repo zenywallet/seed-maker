@@ -322,7 +322,7 @@ if(crypto && crypto.getRandomValues) {
 
   var prev_pdf_output = null;
   var pdf_preview_busy = false;
-  function pdf_preview(pdf_output) {
+  function pdf_preview(pdf_output, cb) {
     pdf_preview_busy = true;
     prev_pdf_output = pdf_output;
     var loadingTask = pdfjsLib.getDocument(pdf_output);
@@ -388,6 +388,9 @@ if(crypto && crypto.getRandomValues) {
             document.getElementById('card-canvas2').style.display = 'none';
           }
           pdf_preview_busy = false;
+          if(cb) {
+            cb();
+          }
         });
       });
     });
@@ -395,7 +398,7 @@ if(crypto && crypto.getRandomValues) {
 
   var prev_layout_pdf_output = null;
   var pdf_layout_busy = false;
-  function pdf_layout(pdf_output) {
+  function pdf_layout(pdf_output, cb) {
     pdf_layout_busy = true;
     prev_layout_pdf_output = pdf_output;
     var loadingTask = pdfjsLib.getDocument(pdf_output);
@@ -431,6 +434,9 @@ if(crypto && crypto.getRandomValues) {
           context.roundRect(0, 0, canvas.width, canvas.height, 3 * ratio).fill();
           context.drawImage(canvas, 0, 0);
           pdf_layout_busy = false;
+          if(cb) {
+            cb();
+          }
         });
       });
     });
@@ -465,18 +471,40 @@ if(crypto && crypto.getRandomValues) {
   document.getElementById('seed').innerHTML = cur_seed.seed;
   document.getElementById('seed2').innerHTML = same_as_text;
   var cur_pdf;
-  function updateSeed(seed, seed2) {
+  function updateSeed(seed, seed2, cb) {
     if(seed2 == null) {
       seed2 = seed;
     }
     cur_pdf = createPdf({layout: card_layouts[cur_layout_id], printable: true, seed: seed, seed2: seed2});
     var pdf_output = cur_pdf.output('datauristring');
-    pdf_preview(pdf_output);
+    var check_done = 0;
+    pdf_preview(pdf_output, function() {
+      check_done++;
+    });
     if(noFrame) {
-      pdf_layout(pdf_output);
+      pdf_layout(pdf_output, function() {
+        check_done++;
+      });
     } else {
       preview_iframe.src = pdf_output;
+      check_done++;
     }
+    var try_count = 0;
+    function wait() {
+      if(check_done >= 2) {
+        if(cb) {
+          cb();
+        }
+      } else {
+        try_count++;
+        if(try_count < 10 * 20) {
+          setTimeout(wait, 50);
+        } else {
+          cb(true);
+        }
+      }
+    }
+    wait();
   }
   updateSeed(cur_seed);
 
@@ -490,7 +518,13 @@ if(crypto && crypto.getRandomValues) {
     }
   });
 
+  var generate_busy = false;
   document.getElementById('btn-generate-new').onclick = function() {
+    if(generate_busy) {
+      return;
+    }
+    generate_busy = true;
+    $('#btn-generate-new').addClass('active');
     cur_seed_two = false;
     clear_pdf_preview();
     if(noFrame) {
@@ -501,10 +535,18 @@ if(crypto && crypto.getRandomValues) {
     document.getElementById('seed').innerHTML = cur_seed.seed;
     var elm_seed2 = document.getElementById('seed2');
     elm_seed2.innerHTML = same_as_text;
-    updateSeed(cur_seed);
+    updateSeed(cur_seed, null, function() {
+      $('#btn-generate-new').removeClass('active');
+      generate_busy = false;
+    });
   }
 
   document.getElementById('btn-generate-new-two').onclick = function() {
+    if(generate_busy) {
+      return;
+    }
+    generate_busy = true;
+    $('#btn-generate-new-two').addClass('active');
     cur_seed_two = true;
     clear_pdf_preview();
     if(noFrame) {
@@ -515,18 +557,32 @@ if(crypto && crypto.getRandomValues) {
     document.getElementById('seed').innerHTML = cur_seed.seed;
     var elm_seed2 = document.getElementById('seed2');
     elm_seed2.innerHTML = cur_seed2.seed;
-    updateSeed(cur_seed, cur_seed2);
+    updateSeed(cur_seed, cur_seed2, function() {
+      $('#btn-generate-new-two').removeClass('active');
+      generate_busy = false;
+    });
   }
 
   var hiddenPrintFrame = document.createElement('iframe');
   hiddenPrintFrame.style.visibility = "hidden";
   document.body.appendChild(hiddenPrintFrame);
+  var print_tval = null;
+  var print_busy = false;
   document.getElementById('btn-print').onclick = function() {
-    cur_pdf.autoPrint();
-    hiddenPrintFrame.src = cur_pdf.output('datauristring');
+    if(!print_busy) {
+      print_busy = true;
+      $('#btn-print').addClass('active');
+      cur_pdf.autoPrint();
+      hiddenPrintFrame.src = cur_pdf.output('datauristring');
+    }
+    clearTimeout(print_tval);
+    print_tval = setTimeout(function() {
+      $('#btn-print').removeClass('active');
+      print_busy = false;
+    }, 1000);
   }
 
-  function downloadPDF(layout, printable, seed, seed2) {
+  function downloadPDF(layout, printable, seed, seed2, cb) {
     var tag = seed.tag;
     if(seed2) {
       tag += '_' + seed2.tag;
@@ -534,23 +590,65 @@ if(crypto && crypto.getRandomValues) {
       seed2 = seed;
     }
     var pdf = createPdf({layout: layout, printable: printable, seed: seed, seed2: seed2});
-    pdf.save('seedcard-' + tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
-  }
-  document.getElementById('btn-download-printable').onclick = function() {
-    var layout = card_layouts[cur_layout_id];
-    downloadPDF(layout, true, cur_seed, cur_seed2);
+    pdf.save('seedcard-' + tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf', {returnPromise: true}).then(function() {
+      if(cb) {
+        cb();
+      }
+    });
   }
 
+  var download_printable_busy = false;
+  document.getElementById('btn-download-printable').onclick = function() {
+    if(!download_printable_busy) {
+      download_printable_busy = true;
+      var layout = card_layouts[cur_layout_id];
+      downloadPDF(layout, true, cur_seed, cur_seed2, function() {
+        setTimeout(function() {
+          download_printable_busy = false;
+        }, 1000);
+      });
+    }
+  }
+
+  var download_image_busy = false;
   document.getElementById('btn-download-image').onclick = function() {
-    var layout = card_layouts[cur_layout_id];
-    downloadPDF(layout, false, cur_seed, cur_seed2);
+    if(!download_image_busy) {
+      download_image_busy = true;
+      var layout = card_layouts[cur_layout_id];
+      downloadPDF(layout, false, cur_seed, cur_seed2, function() {
+        setTimeout(function() {
+          download_image_busy = false;
+        }, 1000);
+      });
+    }
+  }
+
+  var layout_busy = false;
+  var layout_last_request = cur_layout_id;
+  var layout_delay_checker_tval = null;
+  function layout_delay_checker() {
+    clearTimeout(layout_delay_checker_tval);
+    if(layout_busy) {
+      layout_delay_checker_tval = setTimeout(layout_delay_checker, 100);
+    } else {
+      if(cur_layout_id != layout_last_request) {
+        layout_busy = true;
+        cur_layout_id = layout_last_request;
+        updateSeed(cur_seed, cur_seed2, function() {
+          layout_busy = false;
+        });
+      }
+    }
   }
 
   $('.btn-layout').click(function() {
     $('.layout-selector span').removeClass('select');
     $(this).find('.layout-selector span').addClass('select');
-    cur_layout_id = Number($(this).data('id'));
-    updateSeed(cur_seed, cur_seed2);
+    var layout_id = Number($(this).data('id'));
+    layout_last_request = layout_id;
+    if(cur_layout_id != layout_last_request) {
+      layout_delay_checker();
+    }
   });
 
   $('.adjustment-input').on('input', function() {
