@@ -19,7 +19,7 @@ h4 { font-size: 16px; }
 pre { background: #fff; width: 460px; padding: 10px 20px; border-left: 5px solid #ccc; margin: 0 0 20px; }
 p { width: 660px; font-size: 18px; line-height: 24px; margin: 0 0 30px; }
 input { margin: 0; padding: 0; }
-#seed, #card-wrapper, #pdf-preview-wrapper {
+#seed, #seed2, #card-wrapper, #pdf-preview-wrapper {
   list-style: none;
   padding: 10px;
   width: 640px;
@@ -36,6 +36,15 @@ input { margin: 0; padding: 0; }
   box-shadow: 1px 1px 1px rgba(255,255,255,0.1); /* CSS3 */
   text-align: center;
   margin: 10px 0;
+}
+#seed, #seed2 {
+  margin-top: 4px;
+}
+.seed-label {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
 }
 #pdf-preview-wrapper {
   list-style: none;
@@ -194,6 +203,9 @@ input { margin: 0; padding: 0; }
   margin-left: 10px;
   position: relative;
 }
+.button-list.generate-seed {
+  margin-bottom: 36px;
+}
 .layout-selector {
   display: inline-block;
   vertical-align: top;
@@ -221,8 +233,8 @@ input { margin: 0; padding: 0; }
   display: inline-block;
   vertical-align: top;
 }
-#card-canvas {
-  margin: 12px 10px 10px;
+#card-canvas, #card-canvas2 {
+  margin: 12px 5px 10px;
 }
 .vertical-list li {
   margin: 0 0 6px;

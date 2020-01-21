@@ -15,9 +15,13 @@
 <div id="content">
   <h2>Seed Maker</h2>
   <p>Generate a seed card and PDF for printing in the browser. Seed card can be used for various cryptocurrency wallets or user identifications.</p>
+  <div class="seed-label">Seed1 - PDF Left Side</div>
   <div id="seed"></div>
-  <ul class="button-list">
-    <li><div id="btn-generate-new" class="button">Generate New Seed</div></li>
+  <div class="seed-label">Seed2 - PDF Right Side</div>
+  <div id="seed2"></div>
+  <ul class="button-list generate-seed">
+    <li><div id="btn-generate-new" class="button">Generate New Seed (both the same)</div></li>
+    <li><div id="btn-generate-new-two" class="button">Generate New Seed (two different at once)</div></li>
   </ul>
   <h3>Generated Seed Card Image</h3>
   <div id="card-wrapper"><canvas id="card-canvas"></canvas><canvas id="card-canvas2"></canvas></div>
@@ -122,9 +126,9 @@ if(crypto && crypto.getRandomValues) {
   function createPdf(settings) {
     var layout = settings.layout;
     var printable = settings.printable;
-    var priv = settings.seed.priv;
-    var seedstr = settings.seed.seed;
-    var tag = settings.seed.tag;
+    var priv = [settings.seed.priv, settings.seed2.priv];
+    var seedstr = [settings.seed.seed, settings.seed2.seed];
+    var tag = [settings.seed.tag, settings.seed2.tag];
     var gen = settings.seed.gen;
     var w = layout.width * pt_ratio;
     var h = layout.height * pt_ratio;
@@ -142,23 +146,6 @@ if(crypto && crypto.getRandomValues) {
       keywords: 'seed, maker, generator, cryptocurrency, wallet',
       creator: 'Seed Maker'
     });
-    var s = Math.ceil(priv.length / 2);
-    var upper = priv.substring(0, s);
-    var lower = priv.substring(s);
-    var upper_tmp = '';
-    var lower_tmp = '';
-    for(var i = 0; i < upper.length; i += 4) {
-      upper_tmp += upper.substr(i, 4) + ' ';
-    }
-    for(var i = 0; i < lower.length; i += 4) {
-      lower_tmp += lower.substr(i, 4) + ' ';
-    }
-    upper_tmp = upper_tmp.trim();
-    if(upper_tmp.length < lower_tmp.length) {
-      lower_tmp = lower_tmp.trim();
-    }
-    upper = upper_tmp;
-    lower = lower_tmp;
 
     // all page area
     if(!printable) {
@@ -173,6 +160,24 @@ if(crypto && crypto.getRandomValues) {
     var card_margin_y = layout.card.margin_y * pt_ratio;
     var card_round = layout.card.round * pt_ratio;
     for(var i in layout.card_positions) {
+      var s = Math.ceil(priv[i].length / 2);
+      var upper = priv[i].substring(0, s);
+      var lower = priv[i].substring(s);
+      var upper_tmp = '';
+      var lower_tmp = '';
+      for(var j = 0; j < upper.length; j += 4) {
+        upper_tmp += upper.substr(j, 4) + ' ';
+      }
+      for(var j = 0; j < lower.length; j += 4) {
+        lower_tmp += lower.substr(j, 4) + ' ';
+      }
+      upper_tmp = upper_tmp.trim();
+      if(upper_tmp.length < lower_tmp.length) {
+        lower_tmp = lower_tmp.trim();
+      }
+      upper = upper_tmp;
+      lower = lower_tmp;
+
       var pos = layout.card_positions[i];
       var x = (pos.x + cur_layout_x) * pt_ratio;
       var y = (pos.y + cur_layout_y) * pt_ratio;
@@ -207,7 +212,7 @@ if(crypto && crypto.getRandomValues) {
         top: (y + qr_margin),
         ecLevel: 'Q',
         radius: 0.39,
-        text: seedstr,
+        text: seedstr[i],
         size: svg_s,
         mode: 2,
         label: ' ',
@@ -258,7 +263,7 @@ if(crypto && crypto.getRandomValues) {
       // tag text
       pdf.setTextColor(87, 87, 87);
       pdf.setFontSize(7);
-      pdf.text(x + card_w - qr_margin - 1, y + card_w + 2 * pt_ratio + 8.2, tag, null, null, 'right');
+      pdf.text(x + card_w - qr_margin - 1, y + card_w + 2 * pt_ratio + 8.2, tag[i], null, null, 'right');
 
       // seed vector, memo area
       pdf.setFillColor(250, 250, 250);
@@ -304,6 +309,9 @@ if(crypto && crypto.getRandomValues) {
     var canvas = document.getElementById('card-canvas');
     var context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
+    var canvas2 = document.getElementById('card-canvas2');
+    var context2 = canvas2.getContext('2d');
+    context2.clearRect(0, 0, canvas2.width, canvas2.height);
   }
 
   function clear_pdf_layout() {
@@ -325,9 +333,14 @@ if(crypto && crypto.getRandomValues) {
         var viewport = page.getViewport({ scale: scale });
         var pdfcanvas = document.createElement('canvas');
         var pdfctx = pdfcanvas.getContext('2d');
-        pdfcanvas.width = viewport.width * pixel_ratio / 2;
+        if(cur_seed_two) {
+          pdfcanvas.width = viewport.width * pixel_ratio;
+          pdfcanvas.style.width = Math.floor(viewport.width / reduction) + 'px';
+        } else {
+          pdfcanvas.width = (viewport.width + cur_layout_x) * pixel_ratio / 2;
+          pdfcanvas.style.width = Math.floor((viewport.width + cur_layout_x) / reduction / 2) + 'px';
+        }
         pdfcanvas.height = viewport.height * pixel_ratio;
-        pdfcanvas.style.width = Math.floor(viewport.width / reduction / 2) + 'px';
         pdfcanvas.style.height = Math.floor(viewport.height / reduction) + 'px';
         pdfctx.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
 
@@ -337,7 +350,10 @@ if(crypto && crypto.getRandomValues) {
         };
         page.render(renderContext).then(function() {
           var ratio = pt_ratio * scale * pixel_ratio;
-          var img = pdfctx.getImageData((10 + cur_layout_x) * ratio, (7 + cur_layout_y) * ratio, 54 * ratio, 86 * ratio);
+          var layout = card_layouts[cur_layout_id];
+          var img = pdfctx.getImageData((layout.card_positions[0].x + cur_layout_x) * ratio,
+            (layout.card_positions[0].y + cur_layout_y) * ratio,
+            layout.card.width * ratio, layout.card.height * ratio);
           var canvas = document.getElementById('card-canvas');
           var context = canvas.getContext('2d');
           canvas.width = img.width;
@@ -350,6 +366,27 @@ if(crypto && crypto.getRandomValues) {
           context.globalCompositeOperation = 'destination-in';
           context.roundRect(0, 0, canvas.width, canvas.height, 3 * ratio).fill();
           context.drawImage(canvas, 0, 0);
+
+          if(cur_seed_two) {
+            var img2 = pdfctx.getImageData((layout.card_positions[1].x + cur_layout_x) * ratio,
+              (layout.card_positions[1].y + cur_layout_y) * ratio,
+              layout.card.width * ratio, layout.card.height * ratio);
+            var canvas2 = document.getElementById('card-canvas2');
+            canvas2.style.display = 'inline';
+            var context = canvas2.getContext('2d');
+            canvas2.width = img2.width;
+            canvas2.height = img2.height;
+            canvas2.style.width = Math.floor(img2.width / pixel_ratio / reduction) + 'px';
+            canvas2.style.height = Math.floor(img2.height / pixel_ratio / reduction) + 'px';
+
+            context.putImageData(img2, 0, 0);
+            context.fillStyle = '#fff';
+            context.globalCompositeOperation = 'destination-in';
+            context.roundRect(0, 0, canvas2.width, canvas2.height, 3 * ratio).fill();
+            context.drawImage(canvas2, 0, 0);
+          } else {
+            document.getElementById('card-canvas2').style.display = 'none';
+          }
           pdf_preview_busy = false;
         });
       });
@@ -422,18 +459,19 @@ if(crypto && crypto.getRandomValues) {
   var cur_layout_x = Number(document.getElementById('adjustment-x').value) || 0;
   var cur_layout_y = Number(document.getElementById('adjustment-y').value) || 0;
   var cur_seed = generateNewSeed();
+  var cur_seed2 = null;
+  var cur_seed_two = false;
+  var same_as_text = '(same as above)';
   document.getElementById('seed').innerHTML = cur_seed.seed;
+  document.getElementById('seed2').innerHTML = same_as_text;
   var cur_pdf;
-  function updateSeed(seed) {
-    cur_pdf = createPdf({layout: card_layouts[cur_layout_id], printable: true, seed: seed});
-    var pdf_output = cur_pdf.output('datauristring');
-    if(cur_layout_id == 0) {
-      pdf_preview(pdf_output);
-    } else {
-      var pdf0 = createPdf({layout: card_layouts[0], printable: true, seed: seed});
-      var pdf0_output = pdf0.output('datauristring');
-      pdf_preview(pdf0_output);
+  function updateSeed(seed, seed2) {
+    if(seed2 == null) {
+      seed2 = seed;
     }
+    cur_pdf = createPdf({layout: card_layouts[cur_layout_id], printable: true, seed: seed, seed2: seed2});
+    var pdf_output = cur_pdf.output('datauristring');
+    pdf_preview(pdf_output);
     if(noFrame) {
       pdf_layout(pdf_output);
     } else {
@@ -453,13 +491,31 @@ if(crypto && crypto.getRandomValues) {
   });
 
   document.getElementById('btn-generate-new').onclick = function() {
+    cur_seed_two = false;
     clear_pdf_preview();
     if(noFrame) {
       clear_pdf_layout();
     }
     cur_seed = generateNewSeed();
+    cur_seed2 = null;
     document.getElementById('seed').innerHTML = cur_seed.seed;
+    var elm_seed2 = document.getElementById('seed2');
+    elm_seed2.innerHTML = same_as_text;
     updateSeed(cur_seed);
+  }
+
+  document.getElementById('btn-generate-new-two').onclick = function() {
+    cur_seed_two = true;
+    clear_pdf_preview();
+    if(noFrame) {
+      clear_pdf_layout();
+    }
+    cur_seed = generateNewSeed();
+    cur_seed2 = generateNewSeed();
+    document.getElementById('seed').innerHTML = cur_seed.seed;
+    var elm_seed2 = document.getElementById('seed2');
+    elm_seed2.innerHTML = cur_seed2.seed;
+    updateSeed(cur_seed, cur_seed2);
   }
 
   var hiddenPrintFrame = document.createElement('iframe');
@@ -470,25 +526,31 @@ if(crypto && crypto.getRandomValues) {
     hiddenPrintFrame.src = cur_pdf.output('datauristring');
   }
 
-  function downloadPDF(layout, printable, seed) {
-    var pdf = createPdf({layout: layout, printable: printable, seed: seed});
-    pdf.save('seedcard-' + seed.tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
+  function downloadPDF(layout, printable, seed, seed2) {
+    var tag = seed.tag;
+    if(seed2) {
+      tag += '_' + seed2.tag;
+    } else {
+      seed2 = seed;
+    }
+    var pdf = createPdf({layout: layout, printable: printable, seed: seed, seed2: seed2});
+    pdf.save('seedcard-' + tag + '-' + layout.name_short + (printable ? '-printable' : '') + '.pdf');
   }
   document.getElementById('btn-download-printable').onclick = function() {
     var layout = card_layouts[cur_layout_id];
-    downloadPDF(layout, true, cur_seed);
+    downloadPDF(layout, true, cur_seed, cur_seed2);
   }
 
   document.getElementById('btn-download-image').onclick = function() {
     var layout = card_layouts[cur_layout_id];
-    downloadPDF(layout, false, cur_seed);
+    downloadPDF(layout, false, cur_seed, cur_seed2);
   }
 
   $('.btn-layout').click(function() {
     $('.layout-selector span').removeClass('select');
     $(this).find('.layout-selector span').addClass('select');
     cur_layout_id = Number($(this).data('id'));
-    updateSeed(cur_seed);
+    updateSeed(cur_seed, cur_seed2);
   });
 
   $('.adjustment-input').on('input', function() {
@@ -497,7 +559,7 @@ if(crypto && crypto.getRandomValues) {
     if(!Number.isNaN(ax) && !Number.isNaN(ay) && (cur_layout_x != ax || cur_layout_y != ay)) {
       cur_layout_x = ax;
       cur_layout_y = ay;
-      updateSeed(cur_seed);
+      updateSeed(cur_seed, cur_seed2);
     }
   });
 } else {
