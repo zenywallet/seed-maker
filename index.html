@@ -64,6 +64,10 @@ if(crypto && crypto.getRandomValues) {
     var priv = new Uint8Array(32);
     crypto.getRandomValues(priv);
     var priv_base58 = base58.enc(priv);
+    while(priv_base58.length != 44) {
+      crypto.getRandomValues(priv);
+      priv_base58 = base58.enc(priv);
+    }
     var priv_dec = priv_base58.dec();
     var enc_err = 0;
     if(priv.length != priv_dec.length) {
