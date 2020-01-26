@@ -32,8 +32,8 @@
   </ul>
   <div id="pdf-preview-wrapper"></div>
   <ul class="button-list">
-    <li>x: <input id="adjustment-x" class="adjustment-input" type="text" value="0"> mm</li>
-    <li>y: <input id="adjustment-y" class="adjustment-input" type="text" value="0"> mm</li>
+    <li>x: <input id="adjustment-x" class="adjustment-input" type="text" value="0.00"> mm</li>
+    <li>y: <input id="adjustment-y" class="adjustment-input" type="text" value="0.00"> mm</li>
   </ul>
   <ul class="button-list">
     <li><div id="btn-print" class="button">Print Seed Card</div></li>
@@ -465,9 +465,33 @@ if(crypto && crypto.getRandomValues) {
     }
   }
 
+  Number.prototype.countDecimals = function() {
+    if(Math.floor(this.valueOf()) === this.valueOf()) return 0;
+    return this.toString().split('.')[1].length || 0;
+  }
   var cur_layout_id = 0;
-  var cur_layout_x = Number(document.getElementById('adjustment-x').value) || 0;
-  var cur_layout_y = Number(document.getElementById('adjustment-y').value) || 0;
+  var elm_adjustment_x = document.getElementById('adjustment-x');
+  var elm_adjustment_y = document.getElementById('adjustment-y');
+  var cur_layout_x = Number(elm_adjustment_x.value) || 0;
+  var cur_layout_y = Number(elm_adjustment_y.value) || 0;
+  function decimal_place_str(value, point) {
+    var v = Number(value);
+    var c = v.countDecimals();
+    if(c < point) {
+      var s = String(v);
+      if(c == 0) {
+        s += '.';
+      }
+      for(var i = c; i < point; i++) {
+        s += '0';
+      }
+      return s;
+    } else {
+      return String(v);
+    }
+  }
+  elm_adjustment_x.value = decimal_place_str(cur_layout_x, 2);
+  elm_adjustment_y.value = decimal_place_str(cur_layout_y, 2);
   var cur_seed = generateNewSeed();
   var cur_seed2 = null;
   var cur_seed_two = false;
@@ -656,13 +680,17 @@ if(crypto && crypto.getRandomValues) {
   });
 
   $('.adjustment-input').on('input', function() {
-    var ax = Number(document.getElementById('adjustment-x').value);
-    var ay = Number(document.getElementById('adjustment-y').value);
+    var ax = Number(elm_adjustment_x.value);
+    var ay = Number(elm_adjustment_y.value);
     if(!Number.isNaN(ax) && !Number.isNaN(ay) && (cur_layout_x != ax || cur_layout_y != ay)) {
       cur_layout_x = ax;
       cur_layout_y = ay;
       updateSeed(cur_seed, cur_seed2);
     }
+  });
+  $('.adjustment-input').change(function() {
+    elm_adjustment_x.value = decimal_place_str(cur_layout_x, 2);
+    elm_adjustment_y.value = decimal_place_str(cur_layout_y, 2);
   });
 } else {
   throw new Error('Secure random number generation is not supported by this browser.');
