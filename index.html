@@ -34,6 +34,7 @@
   <ul class="button-list">
     <li>x: <input id="adjustment-x" class="adjustment-input" type="text" value="0.00"> mm</li>
     <li>y: <input id="adjustment-y" class="adjustment-input" type="text" value="0.00"> mm</li>
+    <li>center: <input id="adjustment-c" class="adjustment-input" type="text" value="0.00"> mm</li>
   </ul>
   <ul class="button-list">
     <li><div id="btn-print" class="button">Print Seed Card</div></li>
@@ -183,7 +184,7 @@ if(crypto && crypto.getRandomValues) {
       lower = lower_tmp;
 
       var pos = layout.card_positions[i];
-      var x = (pos.x + cur_layout_x) * pt_ratio;
+      var x = (pos.x + cur_layout_x + (eval(i) ? cur_layout_c : 0)) * pt_ratio;
       var y = (pos.y + cur_layout_y) * pt_ratio;
       if(!printable) {
         // card margin
@@ -372,7 +373,7 @@ if(crypto && crypto.getRandomValues) {
           context.drawImage(canvas, 0, 0);
 
           if(cur_seed_two) {
-            var img2 = pdfctx.getImageData((layout.card_positions[1].x + cur_layout_x) * ratio,
+            var img2 = pdfctx.getImageData((layout.card_positions[1].x + cur_layout_x + cur_layout_c) * ratio,
               (layout.card_positions[1].y + cur_layout_y) * ratio,
               layout.card.width * ratio, layout.card.height * ratio);
             var canvas2 = document.getElementById('card-canvas2');
@@ -472,8 +473,10 @@ if(crypto && crypto.getRandomValues) {
   var cur_layout_id = 0;
   var elm_adjustment_x = document.getElementById('adjustment-x');
   var elm_adjustment_y = document.getElementById('adjustment-y');
+  var elm_adjustment_c = document.getElementById('adjustment-c');
   var cur_layout_x = Number(elm_adjustment_x.value) || 0;
   var cur_layout_y = Number(elm_adjustment_y.value) || 0;
+  var cur_layout_c = Number(elm_adjustment_c.value) || 0;
   function decimal_place_str(value, point) {
     var v = Number(value);
     var c = v.countDecimals();
@@ -492,6 +495,7 @@ if(crypto && crypto.getRandomValues) {
   }
   elm_adjustment_x.value = decimal_place_str(cur_layout_x, 2);
   elm_adjustment_y.value = decimal_place_str(cur_layout_y, 2);
+  elm_adjustment_c.value = decimal_place_str(cur_layout_c, 2);
   var cur_seed = generateNewSeed();
   var cur_seed2 = null;
   var cur_seed_two = false;
@@ -682,15 +686,19 @@ if(crypto && crypto.getRandomValues) {
   $('.adjustment-input').on('input', function() {
     var ax = Number(elm_adjustment_x.value);
     var ay = Number(elm_adjustment_y.value);
-    if(!Number.isNaN(ax) && !Number.isNaN(ay) && (cur_layout_x != ax || cur_layout_y != ay)) {
+    var ac = Number(elm_adjustment_c.value);
+    if(!Number.isNaN(ax) && !Number.isNaN(ay) && !Number.isNaN(ac) &&
+      (cur_layout_x != ax || cur_layout_y != ay || cur_layout_c != ac)) {
       cur_layout_x = ax;
       cur_layout_y = ay;
+      cur_layout_c = ac;
       updateSeed(cur_seed, cur_seed2);
     }
   });
   $('.adjustment-input').change(function() {
     elm_adjustment_x.value = decimal_place_str(cur_layout_x, 2);
     elm_adjustment_y.value = decimal_place_str(cur_layout_y, 2);
+    elm_adjustment_c.value = decimal_place_str(cur_layout_c, 2);
   });
 } else {
   throw new Error('Secure random number generation is not supported by this browser.');
